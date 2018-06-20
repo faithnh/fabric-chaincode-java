@@ -88,16 +88,15 @@ public class ChatStream implements StreamObserver<ChaincodeShim.ChaincodeMessage
 		}
 
 		Throwable cause = e.getCause();
-
-
+		
 		if(cause != null) {
-			logger.error(cause.getMessage());
+			logger.error("Caused by: " + cause.getMessage());
 
 			for (StackTraceElement ste : cause.getStackTrace()) {
 				logger.error(ste);
 			}
 		}
-		
+
 		System.exit(-1);
 	}
 
