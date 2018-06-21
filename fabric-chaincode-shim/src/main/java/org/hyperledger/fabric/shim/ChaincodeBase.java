@@ -10,6 +10,7 @@ import static org.hyperledger.fabric.shim.Chaincode.Response.Status.INTERNAL_SER
 import static org.hyperledger.fabric.shim.Chaincode.Response.Status.SUCCESS;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
@@ -151,7 +152,7 @@ public abstract class ChaincodeBase implements Chaincode {
 			logger.info("TLS is enabled");
 			try {
 				final SslContext sslContext = GrpcSslContexts.forClient().trustManager(new File(this.rootCertFile))
-						.keyManager(new File(clientCertFile), new File(clientKeyFile)).build();
+						.keyManager(Base64Reader.readBase64(clientCertFile),Base64Reader.readBase64(clientKeyFile)).build();
 				builder.negotiationType(NegotiationType.TLS);
 				if (!hostOverrideAuthority.equals("")) {
 					logger.info("Host override " + hostOverrideAuthority);
@@ -161,6 +162,8 @@ public abstract class ChaincodeBase implements Chaincode {
 				logger.info("TLS context built: " + sslContext);
 			} catch (SSLException e) {
 				logger.error("failed connect to peer with SSLException", e);
+			} catch (IOException e) {
+				logger.error("Cannot read files:", e);
 			}
 		} else {
 			builder.usePlaintext(true);
