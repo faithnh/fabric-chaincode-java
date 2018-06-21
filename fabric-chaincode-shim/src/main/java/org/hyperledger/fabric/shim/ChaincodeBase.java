@@ -51,6 +51,9 @@ public abstract class ChaincodeBase implements Chaincode {
 	private boolean tlsEnabled = false;
 	private String rootCertFile = "/etc/hyperledger/fabric/peer.crt";
 
+	private String clientCertFile = "/etc/hyperledger/fabric/client.crt";
+	private String clientKeyFile = "/etc/hyperledger/fabric/client.key";
+
 	private String id;
 
 	private final static String CORE_CHAINCODE_ID_NAME = "CORE_CHAINCODE_ID_NAME";
@@ -58,6 +61,8 @@ public abstract class ChaincodeBase implements Chaincode {
 	private final static String CORE_PEER_TLS_ENABLED = "CORE_PEER_TLS_ENABLED";
 	private final static String CORE_PEER_TLS_SERVERHOSTOVERRIDE = "CORE_PEER_TLS_SERVERHOSTOVERRIDE";
 	private static final String CORE_PEER_TLS_ROOTCERT_FILE = "CORE_PEER_TLS_ROOTCERT_FILE";
+	private static final String CORE_TLS_CLIENT_KEY_PATH = "CORE_TLS_CLIENT_KEY_PATH";
+	private static final String CORE_TLS_CLIENT_CERT_PATH = "CORE_TLS_CLIENT_CERT_PATH";
 
 	/**
 	 * Start chaincode
@@ -129,6 +134,12 @@ public abstract class ChaincodeBase implements Chaincode {
 			if (System.getenv().containsKey(CORE_PEER_TLS_ROOTCERT_FILE)) {
 				this.rootCertFile = System.getenv(CORE_PEER_TLS_ROOTCERT_FILE);
 			}
+			if (System.getenv().containsKey(CORE_TLS_CLIENT_CERT_PATH)) {
+				this.clientCertFile = System.getenv(CORE_TLS_CLIENT_CERT_PATH);
+			}
+			if (System.getenv().containsKey(CORE_TLS_CLIENT_KEY_PATH)) {
+				this.clientKeyFile = System.getenv(CORE_TLS_CLIENT_KEY_PATH);
+			}
 		}
 	}
 
@@ -139,7 +150,8 @@ public abstract class ChaincodeBase implements Chaincode {
 		if (tlsEnabled) {
 			logger.info("TLS is enabled");
 			try {
-				final SslContext sslContext = GrpcSslContexts.forClient().trustManager(new File(this.rootCertFile)).build();
+				final SslContext sslContext = GrpcSslContexts.forClient().trustManager(new File(this.rootCertFile))
+						.keyManager(new File(clientCertFile), new File(clientKeyFile)).build();
 				builder.negotiationType(NegotiationType.TLS);
 				if (!hostOverrideAuthority.equals("")) {
 					logger.info("Host override " + hostOverrideAuthority);
