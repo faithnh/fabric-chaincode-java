@@ -27,6 +27,7 @@ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 
+import javax.xml.bind.DatatypeConverter;
 import java.security.PrivateKey;
 
 public class ClientCertificateReader {
@@ -39,7 +40,14 @@ public class ClientCertificateReader {
 //                "-----END EC PRIVATE KEY-----"
 //        ).getBytes(StandardCharsets.UTF_8);
 //
-//        ClientCertificateReader.convertPrivateKeyFromPkcs1ToPkcs8(privateKey);
+//        PrivateKey k = ClientCertificateReader.convertPrivateKeyFromPkcs1ToPkcs8(privateKey);
+//        System.out.println("FORMAT: " + k.getFormat());
+//        byte[] pemFormat = (
+//                "-----BEGIN RSA PRIVATE KEY-----\n" + DatatypeConverter.printBase64Binary(k.getEncoded()) + "\n-----END RSA PRIVATE KEY-----\n"
+//        ).getBytes();
+//
+//        System.out.println(new String(pemFormat));
+//
 //    }
 
     private static Log logger = LogFactory.getLog(ClientCertificateReader.class);
@@ -49,7 +57,9 @@ public class ClientCertificateReader {
         byte[] encodedPrivateKey = readBase64(pkcs1PrivateKeyPath);
         PrivateKey k = convertPrivateKeyFromPkcs1ToPkcs8(encodedPrivateKey);
 
-        return new ByteArrayInputStream(k.getEncoded());
+        return new ByteArrayInputStream(
+                ("-----BEGIN EC PRIVATE KEY-----\n" + DatatypeConverter.printBase64Binary(k.getEncoded()) + "\n-----END EC PRIVATE KEY-----\n").getBytes()
+        );
     }
 
     public static InputStream readCertificate(String certificatefilePath) throws IOException {
