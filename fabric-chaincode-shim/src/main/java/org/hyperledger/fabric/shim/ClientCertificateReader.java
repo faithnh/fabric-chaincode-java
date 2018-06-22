@@ -8,54 +8,48 @@ package org.hyperledger.fabric.shim;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.spec.InvalidKeySpecException;
-import java.security.spec.RSAPrivateKeySpec;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Base64;
-import java.util.Enumeration;
 import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERInteger;
-import org.bouncycastle.asn1.DERObject;
-import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.*;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
+
 import java.security.PrivateKey;
 
 public class ClientCertificateReader {
+//    public static void main(String[] args) {
+//        byte[] privateKey = (
+//                "-----BEGIN EC PRIVATE KEY-----\n" +
+//                "MHcCAQEEIEOFvlcbPnZrJPr2Asy8oV9orkGzkLRINywzLrh7Fn3uoAoGCCqGSM49\n" +
+//                "AwEHoUQDQgAE9jL4rq2T8YAXEyzRHpoSBV8SnvInS/NSbORkezJewNP+NlTayxYZ\n" +
+//                "VskubLwo7U4l11Dy+Ojc83xLEGXJJo/2Hw==\n" +
+//                "-----END EC PRIVATE KEY-----"
+//        ).getBytes(StandardCharsets.UTF_8);
+//
+//        ClientCertificateReader.convertPrivateKeyFromPkcs1ToPkcs8(privateKey);
+//    }
+
     private static Log logger = LogFactory.getLog(ClientCertificateReader.class);
 
     // FIXME: 配置は適切じゃないがとりあえず配置
     public static InputStream readPrivateKeyForPkcs1(String pkcs1PrivateKeyPath) throws IOException {
         byte[] encodedPrivateKey = readBase64(pkcs1PrivateKeyPath);
-        PrivateKey k = generatePrivateKeyAsPkcs1(encodedPrivateKey);
+        PrivateKey k = convertPrivateKeyFromPkcs1ToPkcs8(encodedPrivateKey);
 
-        final String keyFormat = k.getFormat();
-
-        if (keyFormat.equals("PKCS#8")) {
-            return new ByteArrayInputStream(k.getEncoded());
-        }
-
-        else if (keyFormat.equals("PKCS#1")) {
-            try (ASN1InputStream asn1InputStream = new ASN1InputStream(k.getEncoded())) {
-                DERObject rsaPrivateKey = asn1InputStream.readObject();
-                return  new ByteArrayInputStream(new PrivateKeyInfo(
-                        new AlgorithmIdentifier(PKCSObjectIdentifiers.rsaEncryption), rsaPrivateKey)
-                        .getDEREncoded());
-            }
-        }
-
-        throw new IOException("Unexpected key format" + keyFormat);
+        return new ByteArrayInputStream(k.getEncoded());
     }
 
     public static InputStream readCertificate(String certificatefilePath) throws IOException {
@@ -71,7 +65,7 @@ public class ClientCertificateReader {
         return Base64.getDecoder().decode(base64String.getBytes());
     }
 
-    private static PrivateKey generatePrivateKeyAsPkcs1(byte[] privateKey) {
+    private static PrivateKey convertPrivateKeyFromPkcs1ToPkcs8(byte[] privateKey) {
         try {
             System.out.println("Input String as PKCS1 Private Key: \n" + new String(privateKey, StandardCharsets.UTF_8));
 
@@ -80,32 +74,12 @@ public class ClientCertificateReader {
                     "-----BEGIN EC PRIVATE KEY-----\n", "")
                     .replace("-----END EC PRIVATE KEY-----", "").replace("\n", "");
             byte[] decodedPrivateKey = Base64.getDecoder().decode(privKeyPEM);
-
-            ASN1Sequence primitive = (ASN1Sequence) ASN1Sequence
-                    .fromByteArray(decodedPrivateKey);
-            Enumeration<?> e = primitive.getObjects();
-            BigInteger v = ((DERInteger) e.nextElement()).getValue();
-
-            int version = v.intValue();
-            if (version != 0 && version != 1) {
-                throw new IllegalArgumentException("wrong version for RSA private key");
-            }
-            /**
-             * In fact only modulus and private exponent are in use.
-             */
-            BigInteger modulus = ((DERInteger) e.nextElement()).getValue();
-            BigInteger publicExponent = ((DERInteger) e.nextElement()).getValue();
-            BigInteger privateExponent = ((DERInteger) e.nextElement()).getValue();
-            BigInteger prime1 = ((DERInteger) e.nextElement()).getValue();
-            BigInteger prime2 = ((DERInteger) e.nextElement()).getValue();
-            BigInteger exponent1 = ((DERInteger) e.nextElement()).getValue();
-            BigInteger exponent2 = ((DERInteger) e.nextElement()).getValue();
-            BigInteger coefficient = ((DERInteger) e.nextElement()).getValue();
-
-            RSAPrivateKeySpec spec = new RSAPrivateKeySpec(modulus, privateExponent);
-            KeyFactory kf = KeyFactory.getInstance("RSA");
-            PrivateKey pk = kf.generatePrivate(spec);
-            return pk;
+            ASN1Sequence seq = ASN1Sequence.getInstance(decodedPrivateKey);
+            org.bouncycastle.asn1.sec.ECPrivateKey pKey = org.bouncycastle.asn1.sec.ECPrivateKey.getInstance(seq);
+            AlgorithmIdentifier algId = new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, pKey.getParameters());
+            byte[] server_pkcs8 = new PrivateKeyInfo(algId, pKey).getEncoded();
+            KeyFactory fact = KeyFactory.getInstance("EC");
+            return fact.generatePrivate (new PKCS8EncodedKeySpec(server_pkcs8));
         } catch (IOException e2) {
             throw new IllegalStateException();
         } catch (NoSuchAlgorithmException e) {

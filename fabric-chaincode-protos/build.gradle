@@ -5,6 +5,7 @@
  */
 apply plugin: 'com.google.protobuf'
 apply plugin: 'de.undercouch.download'
+apply plugin: 'maven-publish'
 
 repositories {
     maven { url "https://plugins.gradle.org/m2/" }
@@ -32,6 +33,31 @@ buildscript {
     dependencies {
         classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.5'
         classpath 'de.undercouch:gradle-download-task:3.4.2'
+    }
+}
+
+publishing {
+    publications {
+        // define the publication of the shim jar
+        shimJar(MavenPublication) {
+            from components.java
+            artifactId 'fabric-chaincode-protos'
+        }
+    }
+}
+
+publishing {
+    repositories {
+        // hyperledger snapshots repository
+        maven {
+            url 'https://nexus.hyperledger.org/content/repositories/snapshots'
+            name 'hyperledger-snapshots'
+        }
+        // hyperledger release repository
+        maven {
+            url 'https://nexus.hyperledger.org/content/repositories/releases'
+            name 'hyperledger-releases'
+        }
     }
 }
 
