@@ -78,7 +78,7 @@ public class ClientCertificateReader {
             // remove header and decode private key
             String privKeyPEM = new String(privateKey, StandardCharsets.UTF_8).replace(
                     "-----BEGIN EC PRIVATE KEY-----\n", "")
-                    .replace("-----END EC PRIVATE KEY-----", "");
+                    .replace("-----END EC PRIVATE KEY-----", "").replace("\n", "");
             byte[] decodedPrivateKey = Base64.getDecoder().decode(privKeyPEM);
 
             ASN1Sequence primitive = (ASN1Sequence) ASN1Sequence
