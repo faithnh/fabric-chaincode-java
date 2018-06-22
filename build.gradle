@@ -27,7 +27,7 @@ subprojects {
     dependencies {
         compile 'commons-cli:commons-cli:1.4'
         compile 'commons-logging:commons-logging:1.2'
-        compile 'org.bouncycastle:bcprov-jdk16:1.44'
+        compile 'org.bouncycastle:bcprov-jdk15on:1.59'
 
         testCompile 'junit:junit:4.12'
         testCompile 'org.hamcrest:hamcrest-library:1.3'
