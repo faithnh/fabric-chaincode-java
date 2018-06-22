@@ -21,6 +21,8 @@ import java.util.Base64;
 import java.util.Enumeration;
 import java.util.stream.Collectors;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERInteger;
@@ -31,6 +33,8 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import java.security.PrivateKey;
 
 public class Base64Reader {
+    private static Log logger = LogFactory.getLog(Base64Reader.class);
+
     // FIXME: 配置は適切じゃないがとりあえず配置
     public static InputStream toPkcs8(byte[] pkcs1KeyString) throws IOException {
 
@@ -66,6 +70,7 @@ public class Base64Reader {
 
     private static PrivateKey generatePrivateKeyAsPkcs1(byte[] encodedPrivateKey) {
         try {
+            logger.debug("Input String as PKCS1 Private Key: \n" + new String(encodedPrivateKey, StandardCharsets.UTF_8));
             ASN1Sequence primitive = (ASN1Sequence) ASN1Sequence
                     .fromByteArray(encodedPrivateKey);
             Enumeration<?> e = primitive.getObjects();
