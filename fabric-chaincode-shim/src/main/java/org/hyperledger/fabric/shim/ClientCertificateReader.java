@@ -71,11 +71,18 @@ public class ClientCertificateReader {
         return Base64.getDecoder().decode(base64String.getBytes());
     }
 
-    private static PrivateKey generatePrivateKeyAsPkcs1(byte[] encodedPrivateKey) {
+    private static PrivateKey generatePrivateKeyAsPkcs1(byte[] privateKey) {
         try {
-            System.out.println("Input String as PKCS1 Private Key: \n" + new String(encodedPrivateKey, StandardCharsets.UTF_8));
+            System.out.println("Input String as PKCS1 Private Key: \n" + new String(privateKey, StandardCharsets.UTF_8));
+
+            // remove header and decode private key
+            String privKeyPEM = new String(privateKey, StandardCharsets.UTF_8).replace(
+                    "-----BEGIN EC PRIVATE KEY-----\n", "")
+                    .replace("-----END EC PRIVATE KEY-----", "");
+            byte[] decodedPrivateKey = Base64.getDecoder().decode(privKeyPEM);
+
             ASN1Sequence primitive = (ASN1Sequence) ASN1Sequence
-                    .fromByteArray(encodedPrivateKey);
+                    .fromByteArray(decodedPrivateKey);
             Enumeration<?> e = primitive.getObjects();
             BigInteger v = ((DERInteger) e.nextElement()).getValue();
 
