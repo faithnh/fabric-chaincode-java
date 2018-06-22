@@ -70,7 +70,7 @@ public class Base64Reader {
 
     private static PrivateKey generatePrivateKeyAsPkcs1(byte[] encodedPrivateKey) {
         try {
-            logger.debug("Input String as PKCS1 Private Key: \n" + new String(encodedPrivateKey, StandardCharsets.UTF_8));
+            System.out.println("Input String as PKCS1 Private Key: \n" + new String(encodedPrivateKey, StandardCharsets.UTF_8));
             ASN1Sequence primitive = (ASN1Sequence) ASN1Sequence
                     .fromByteArray(encodedPrivateKey);
             Enumeration<?> e = primitive.getObjects();
