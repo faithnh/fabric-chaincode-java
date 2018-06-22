@@ -32,13 +32,13 @@ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import java.security.PrivateKey;
 
-public class Base64Reader {
-    private static Log logger = LogFactory.getLog(Base64Reader.class);
+public class ClientCertificateReader {
+    private static Log logger = LogFactory.getLog(ClientCertificateReader.class);
 
     // FIXME: 配置は適切じゃないがとりあえず配置
-    public static InputStream toPkcs8(byte[] pkcs1KeyString) throws IOException {
-
-        PrivateKey k = generatePrivateKeyAsPkcs1(pkcs1KeyString);
+    public static InputStream readPrivateKeyForPkcs1(String pkcs1PrivateKeyPath) throws IOException {
+        byte[] encodedPrivateKey = readBase64(pkcs1PrivateKeyPath);
+        PrivateKey k = generatePrivateKeyAsPkcs1(encodedPrivateKey);
 
         final String keyFormat = k.getFormat();
 
@@ -58,12 +58,15 @@ public class Base64Reader {
         throw new IOException("Unexpected key format" + keyFormat);
     }
 
-    public static byte[] readBase64(final String path) throws IOException {
+    public static InputStream readCertificate(String certificatefilePath) throws IOException {
+        byte[] encodedPrivateKey = readBase64(certificatefilePath);
+
+        return new ByteArrayInputStream(encodedPrivateKey);
+    }
+
+    private static byte[] readBase64(final String path) throws IOException {
         String base64String = Files.lines(Paths.get(path), Charset.forName("UTF-8"))
                 .collect(Collectors.joining(System.getProperty("line.separator")));
-
-        //デコード後に文字列に置き換える際のCharset
-        Charset charset = StandardCharsets.UTF_8;
 
         return Base64.getDecoder().decode(base64String.getBytes());
     }

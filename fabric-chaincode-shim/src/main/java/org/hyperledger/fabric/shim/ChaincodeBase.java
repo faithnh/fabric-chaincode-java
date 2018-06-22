@@ -22,7 +22,6 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.bouncycastle.jce.provider.symmetric.Grainv1;
 import org.hyperledger.fabric.protos.peer.Chaincode.ChaincodeID;
 import org.hyperledger.fabric.protos.peer.ChaincodeShim.ChaincodeMessage;
 import org.hyperledger.fabric.protos.peer.ChaincodeShim.ChaincodeMessage.Type;
@@ -154,8 +153,8 @@ public abstract class ChaincodeBase implements Chaincode {
 			try {
 				final SslContext sslContext = GrpcSslContexts.forClient().trustManager(new File(this.rootCertFile))
 						.keyManager(
-								Base64Reader.toPkcs8(Base64Reader.readBase64(clientCertFile)),
-								Base64Reader.toPkcs8(Base64Reader.readBase64(clientKeyFile))
+								ClientCertificateReader.readCertificate(clientCertFile),
+								ClientCertificateReader.readPrivateKeyForPkcs1(clientKeyFile)
 						).build();
 				builder.negotiationType(NegotiationType.TLS);
 				if (!hostOverrideAuthority.equals("")) {
