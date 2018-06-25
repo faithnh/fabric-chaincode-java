@@ -484,7 +484,7 @@ public class Handler {
 	}
 
 	private static ChaincodeMessage newGetStateEventMessage(final String channelId, final String txId, final String key) {
-		return newEventMessage(GET_STATE, channelId, txId, ByteString.copyFromUtf8(key));
+		return newEventMessage(GET_STATE, channelId, txId, GetState.newBuilder().setKey(key).build().toByteString());
 	}
 
 	private static ChaincodeMessage newPutStateEventMessage(final String channelId, final String txId, final String key, final ByteString value) {
